@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+{% load bootstrap3 %}
+<html ng-app='OsbApp'>
+    <head>
+        <title>OSBB{% block bootstrap3_title %}{% block title %}{% endblock %}{% endblock %}</title>
+        <meta charset="utf-8">
+        <meta name="description" content="">
+        <meta name="author" content="dimas">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        {% bootstrap_css %}
+        <link href="/static/css/style.css" rel="stylesheet">
+
+    </head>
+    <body ng-controller="OsbBaseCtrl">
+        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="#">OSBB</a>
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li class="active"><a href="/users/">Жильци</a></li>
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a href="#">Static top</a></li>
+                    <li class="active"><a href="./">Fixed top</a></li>
+                </ul>
+            </div>
+          </div>
+        </div>
+        <div class="container ">
+
+            <div id="id_message_place" class=" container-fluid " data-alerts="alerts"
+                    data-titles="{&quot;warning&quot;: &quot;&lt;em&gt;Warning!&lt;/em&gt;&quot;}"
+                    data-ids="myid"
+                    data-fade="10000">
+            </div>
+
+                {% if messages %}
+                    {% bootstrap_messages %}
+                {% endif %}
+
+
+
+            {% block content %} Empty page {% endblock %}
+
+            <p><hr></p>
+            <footer class="row">
+                <div class="span6">
+                    <p>This is OSBB</a></p>
+                </div>
+            </footer>
+
+        </div>
+
+        {% block bootstrap3_content %}{% endblock %}
+        {% bootstrap_javascript jquery=True %}
+        <script type="text/javascript" src="/static/js/jquery.validate.js"></script>
+        <script type="text/javascript" src="/static/js/query.bsAlerts.min.js"></script>
+        <script type="text/javascript" src="/static/js/bootbox.min.js"></script>
+
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.10/angular.js" type="text/javascript"></script>
+        <script type="text/javascript" src="/static/js/app.js"></script>
+        <script type="text/javascript">
+            // Add the CSRF Token
+            var OsbApp = angular.module('OsbApp', []);
+
+            OsbApp.config(function($interpolateProvider) {
+                $interpolateProvider.startSymbol('{$');
+                $interpolateProvider.endSymbol('$}');
+            });
+            OsbApp.config(['$httpProvider',
+                function($httpProvider) {
+                    $httpProvider.defaults.headers.common['X-CSRFToken'] = '{{ csrf_token|escapejs }}';
+                    $httpProvider.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded;charset=utf-8';
+                    $httpProvider.defaults.transformRequest = [
+
+                        function(data) {
+                            /**
+                             * The workhorse; converts an object to x-www-form-urlencoded serialization.
+                             * @param {Object} obj
+                             * @return {String}
+                             */
+                            var param = function(obj) {
+                                var query = '';
+                                var name, value, fullSubName, subName, subValue, innerObj, i;
+
+                                for (name in obj) {
+                                    value = obj[name];
+
+                                    if (value instanceof Array) {
+                                        for (i = 0; i < value.length; ++i) {
+                                            subValue = value[i];
+                                            fullSubName = name + '[' + i + ']';
+                                            innerObj = {};
+                                            innerObj[fullSubName] = subValue;
+                                            query += param(innerObj) + '&';
+                                        }
+                                    } else if (value instanceof Object) {
+                                        for (subName in value) {
+                                            subValue = value[subName];
+                                            fullSubName = name + '[' + subName + ']';
+                                            innerObj = {};
+                                            innerObj[fullSubName] = subValue;
+                                            query += param(innerObj) + '&';
+                                        }
+                                    } else if (value !== undefined && value !== null) {
+                                        query += encodeURIComponent(name) + '=' + encodeURIComponent(value) + '&';
+                                    }
+                                }
+
+                                return query.length ? query.substr(0, query.length - 1) : query;
+                            };
+
+                            return angular.isObject(data) && String(data) !== '[object File]' ? param(data) : data;
+                        }
+                    ];
+                }
+            ]);
+            OsbApp.factory('dataExchangeService', function($rootScope) {
+                var dataExchangeService = {};
+                dataExchangeService.post = function(_event, account) {
+                    $rootScope.$broadcast(_event || 'loadAccount', account || {});
+                };
+
+                return dataExchangeService;
+            });
+
+            OsbApp.factory('messageService', function($rootScope) {
+                var messageService = {
+                    show: function(params) {
+                         if (!angular.isObject(params)) {
+                            params = {
+                                msg: params || 'Ошибка',
+                                type: 'success'
+                            }
+                        }
+                        $(document).trigger("add-alerts", [{
+                            priority: params.type,
+                            message: params.msg
+                        }]);
+                    },
+                    error: function(msg) {
+                        messageService.show({
+                            msg: msg,
+                            type: 'error'
+                        });
+                    }
+                };
+                return messageService;
+            });
+
+            OsbApp.controller('OsbBaseCtrl', ['$scope',
+                function($scope) {}
+            ]);
+        </script>
+        {% block scripts %}
+
+        {% endblock %}
+    </body>
+</html>
+
