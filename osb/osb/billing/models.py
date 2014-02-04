@@ -2,9 +2,9 @@
 from django.db import models
 import logging
 import re
-# Get an instance of a logger
+
 logger = logging.getLogger('osb')
-# Create your models here.
+
 
 class Accounts(models.Model):
     uid = models.CharField(max_length=20, unique=True, verbose_name=u"Квартира №", help_text="Уникальный Идентификатор Владельца")
@@ -45,7 +45,7 @@ class Accounts(models.Model):
         return not self.__lt__(other)
 
 class Services(models.Model):
-    """docstring for Services"""
+    """model for account's Services"""
     name = models.CharField(max_length=50, default="Квартплата", verbose_name="Название сервиса", help_text="Название сервиса")
     service_count = models.DecimalField (max_digits=5, decimal_places=2, default=0, verbose_name=u"Площадь", help_text="Название сервиса")
 
