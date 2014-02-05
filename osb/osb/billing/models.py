@@ -2,11 +2,26 @@
 from django.db import models
 import logging
 import re
-
+from datetime import date
 logger = logging.getLogger('osb')
 
 
+class Services(models.Model):
+    """model for account's Services"""
+    name = models.CharField(max_length=50, default="Квартплата", verbose_name="Название сервиса", help_text="Название сервиса")
+    service_count = models.DecimalField (max_digits=5, decimal_places=2, default=0, verbose_name=u"Площадь", help_text="Название сервиса")
+    price = models.DecimalField(max_digits=7, decimal_places=5, default=0, verbose_name=u"Стоимость сервиса", help_text="Стоимость 1 сервиса")
+    start_date = models.DateField (verbose_name=u"Врямя начала использования", help_text="С какого числа начислять плату за сервис")
+    end_date = models.DateField (verbose_name=u"Врямя конца использования", help_text="До какого числа начислять плату за сервис", default=date(2100, 01, 01))
+
+
+
+    # def __init__(self, arg):
+    #     super(Services, self).__init__()
+    #     self.arg = arg
+
 class Accounts(models.Model):
+    service =  models.ForeignKey('Services')
     uid = models.CharField(max_length=20, unique=True, verbose_name=u"Квартира №", help_text="Уникальный Идентификатор Владельца")
     name = models.CharField(max_length=50, verbose_name=u"ФИО", help_text="Фамилия и Имя Владельца ")
     address = models.CharField(max_length=60, blank=True, null=True, verbose_name=u"Адресс", help_text="Адресс", default="пр. Мира 89 ")
@@ -20,6 +35,7 @@ class Accounts(models.Model):
     relatives = models.TextField(blank=True, null=True, verbose_name=u"Другие Жильци Квартиры", help_text="")
     notes = models.TextField(blank=True, null=True, verbose_name=u"Поле для Заметок")
     deleted = models.BooleanField(default=False)
+
 
     def __lt__(self, other):
         regex_pat = re.compile(r'(\d+)')
@@ -43,12 +59,3 @@ class Accounts(models.Model):
 
     def __gt__(self, other):
         return not self.__lt__(other)
-
-class Services(models.Model):
-    """model for account's Services"""
-    name = models.CharField(max_length=50, default="Квартплата", verbose_name="Название сервиса", help_text="Название сервиса")
-    service_count = models.DecimalField (max_digits=5, decimal_places=2, default=0, verbose_name=u"Площадь", help_text="Название сервиса")
-
-    def __init__(self, arg):
-        super(Services, self).__init__()
-        self.arg = arg

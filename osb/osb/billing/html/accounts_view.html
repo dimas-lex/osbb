@@ -94,7 +94,9 @@
 
                     >
                         {% csrf_token %}
-                        {% bootstrap_form form %}
+                        {% bootstrap_form service_form %}
+                        {   % bootstrap_form account_form %   }
+
                         {% buttons submit='Добавить' reset="Отменить" %}{% endbuttons %}
                     </form>
                 </div>

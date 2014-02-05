@@ -122,7 +122,8 @@ def get_accounts_for_page(request, page=1):
     page_count = Accounts.objects.values('porch').distinct().count()
 
     data = {
-        'form': AccountShortModelForm(),
+        'account_form': AccountShortModelForm(),
+        'service_form': ServiceModelForm(),
         'pages': range(1, page_count + 1),
         'current_page': page,
     }
