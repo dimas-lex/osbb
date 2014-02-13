@@ -1,28 +1,22 @@
-# from django.template.loader import get_template
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.shortcuts import render_to_response
 from django.template.context import RequestContext
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import viewsets, status, generics, permissions
+
 from osb.billing.models import *
+from osb.billing.serializers import *
 from osb.forms.forms import *
+
 import logging,  json
 logger = logging.getLogger('osb')
 
 
-from rest_framework import viewsets
-from osb.billing.serializers import AccountsSerializer
-from rest_framework import generics, permissions
-# from django.core.exceptions import DoesNotExist
-
-
-from django.http import Http404
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-
-
-class AccountsList(APIView):
+class AccountsListView(APIView):
     """
-    List all Accounts, or create a new snippet.
+        View class for managing and viewing Accounts
     """
     def get_object(self, id):
         try:
@@ -31,15 +25,15 @@ class AccountsList(APIView):
             raise Http404
 
     def get(self, request, format=None):
-        logger.debug('----- get_accounts_for_page ------')
+        logger.debug('AccountsView get ------')
 
         page = request.GET.get('page', 1)
-        accounts = Accounts.objects.filter(deleted = False, porch = page)
+        accounts = Accounts.objects.filter(deleted = False) #, porch = page)
         serializer = AccountsSerializer(accounts, many=True)
         return Response(serializer.data)
 
     def post(self, request):
-        logger.debug('----- post ------')
+        logger.debug('AccountsView post ------')
 
         if 'id' in request.POST:
             # update
@@ -48,19 +42,20 @@ class AccountsList(APIView):
                 serializer = AccountsSerializer(account, data=request.DATA)
                 if serializer.is_valid():
                     serializer.save()
-                    return Response({'success': True} , status=status.HTTP_201_CREATED)
+                    return Response(serializer.data , status=status.HTTP_201_CREATED)
+
         else:
             # 100 new account
             serializer = AccountsSerializer(data=request.DATA)
             if serializer.is_valid():
                 serializer.save()
-                return Response({'success': True})
+                return Response(serializer.data)
 
         # fail
         return Response({'success': False}, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request):
-        logger.debug("--- delete_account --")
+        logger.debug("AccountsView delete_account --")
 
         del_result = False
         account = None
@@ -91,7 +86,69 @@ class AccountsList(APIView):
 
         return Response({'success': del_result} )
 
+class AccountView(APIView):
+    """docstring for AccountView"""
+    def __init__(self, arg):
+        super(AccountView, self).__init__()
+        self.arg = arg
 
+
+class ServicesView(APIView):
+    """
+        View class for managing of account's services via REST
+    """
+    def get_object(self, id):
+        try:
+            return Services.objects.get(id=id)
+        except Services.DoesNotExist:
+            raise Http404
+
+    def get(self, request, format=None):
+        logger.debug('ServicesView get')
+
+        if ('account' in request.GET):
+            # return active service for curent accoutn
+            service = Services.objects.get(account=request.GET.get('account'))
+            serializer = ServicesSerializer(service, many=False)
+            return Response(serializer.data)
+
+        elif ('id' in request.GET):
+            # return service by id
+            service = Services.objects.get(id=request.GET.get('id'))
+            serializer = ServicesSerializer(service, many=False)
+            return Response(serializer.data)
+
+        else:
+            #return all active services
+            services = Services.objects.filter(is_active=True)
+            serializer = ServicesSerializer(services, many=True)
+            return Response(serializer.data)
+
+    def post(self, request):
+        logger.debug('ServicesView post ------')
+        logger.debug( request.POST )
+
+        if 'id' in request.POST:
+            # update
+            service = self.get_object(request.POST.get('id'))
+            if service:
+                serializer = ServicesSerializer(service, data=request.DATA)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            logger.debug('----- new ------')
+            # 100 new account
+            serializer = ServicesSerializer(data=request.DATA)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        # fail
+        return Response({'success': False}, status=status.HTTP_400_BAD_REQUEST)
+
+
+############################################################
 def add_account(request):
     logger.debug("add_account")
 
@@ -120,7 +177,8 @@ def add_account(request):
 def get_accounts_for_page(request, page=1):
     logger.debug("get_accounts_for_page:" + str(page))
     page_count = Accounts.objects.values('porch').distinct().count()
-
+    service_form = ServiceModelForm()
+    logger.debug(str(service_form).replace('<input', '\n\n<input'))
     data = {
         'account_form': AccountShortModelForm(),
         'service_form': ServiceModelForm(),

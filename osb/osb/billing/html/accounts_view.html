@@ -73,34 +73,75 @@
 
     <!-- Modal -->
         <div
-            class="modal fade"
+            class="modal fade bs-modal-lg "
             id="add_model_window"
             ng-controller="AccountCtrl"
-            tabindex="-1" role="dialog" aria-labelledby="add_model_windowLabel" aria-hidden="true"
+            tabindex="-1"
+            aria-hidden="true"
         >
-            <div class="modal-dialog">
+            <div class="modal-dialog modal_width">
               <div class="modal-content">
                 <div class="modal-header">
                   <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
                   <h4 class="modal-title" id="add_model_windowLabel">Добавить жильца</h4>
                 </div>
                 <div class="modal-body">
-                    <form
-                        role="form"
-                        class="form-{{layout}}"
-                        novalidate
-                        ng-submit="processForm()"
-                        name="accountForm"
+                    <div class="panel panel-default">
+                        <div class="row">
+                            <div class="col-xs-6">
+                                <div class="panel panel-default">
+                                    <div class="panel-heading">Информация о владельце</div>
+                                    <div class="panel-body">
+                                        <form
+                                        role="form"
+                                        class="form-horizontal"
+                                        novalidate
+                                        ng-submit="processForm()"
+                                        name="accountForm"
+                                        >
+                                            {% csrf_token %}
+                                            {% bootstrap_form account_form %}
 
-                    >
-                        {% csrf_token %}
-                        {% bootstrap_form service_form %}
-                        {   % bootstrap_form account_form %   }
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xs-6">
+                                <div class="panel panel-default">
+                                    <div class="panel-heading">Информация о квартплате</div>
+                                    <div class="panel-body">
+                                        <form
+                                        role="form"
+                                        class="form-horizontal"
+                                        novalidate
+                                        name="serviceForm"
+                                        >
+                                            {% csrf_token %}
+                                            {% bootstrap_form service_form %}
 
-                        {% buttons submit='Добавить' reset="Отменить" %}{% endbuttons %}
-                    </form>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
                 </div>
                 <div class="modal-footer">
+                    <button
+                        id="reset_button"
+                        type="button"
+                        class="btn btn-default"
+                        data-dismiss="modal">
+                        Отменить
+                    </button>
+                    <button type="button"
+                        class="btn btn-primary"
+                        ng-click="processForm()"
+                    >
+                        Сохранить
+                    </button>
                 </div>
               </div><!-- /.modal-content -->
             </div><!-- /.modal-dialog -->
@@ -117,36 +158,68 @@
             function($scope, $http, dataExchangeService, messageService) {
 
                 $scope.$on('updateAccountModel', function(_event, account) {
-                    $scope.account_model = account || {};
+                    account = angular.isObject(account) ? account : {};
+                    $scope.account_model = account;
+
                     angular
                         .element('div.has-error')
                         .removeClass('has-error');
+                    $scope.service_model =
+                        (account.services && angular.isArray(account.services)) ?
+                            account.services[0] :
+                            {
+                                name: 'Квартплата',
+                                end_date: '01.01.2090'
+                            };
                 });
-                 $("button[type='reset']").click(function() {
+                 $("#reset_button").click(function() {
                     $('#add_model_window').modal('hide');
                  });
                 $scope.processForm = function() {
+                    console.log($scope.service_model)
+                    if ($scope.accountForm.$valid && $scope.serviceForm.$valid) {
 
-                    if ($scope.accountForm.$valid) {
                         var errorMsgOnDelete = "Во время выполнения запроса произошла ошибка. Запись не сохранена";
+
+                        var onFailSaving = function() {
+                            messageService.error(errorMsgOnDelete);
+                            dataExchangeService.post('loadData');
+                        };
+                        var saveServices = function(account) {
+                            $scope.service_model.account = account.id;
+                            $http.post("/rest/services/",
+                                $scope.service_model
+
+                            ).success(function(response) {
+                                if (response && (response.success || response.id)) {
+                                    messageService.show("Запись успешно сохранена");
+                                    dataExchangeService.post('loadData');
+                                } else {
+                                    onFailSaving();
+                                }
+
+                            })
+                            .error(onFailSaving);
+                        }
+
                         $http.post("/rest/accounts/",
                             $scope.account_model
 
                         ).success(function(response) {
-                            if (response && response.success) {
-                                messageService.show("Запись успешно сохранена");
+                            if (response && (response.success || response.id)) {
+                                saveServices(response);
                             } else {
-                                messageService.error(errorMsgOnDelete);
+                                onFailSaving();
                             }
-                            dataExchangeService.post('loadData');
-                        }).error(function() {
-                            dataExchangeService.post('loadData');
-                            messageService.error(errorMsgOnDelete);
+
                         })
+                        .error(onFailSaving);
 
                     } else {
 
-                        var par = angular
+                        console.log($scope.serviceForm.$error)
+
+                        angular
                             .element(':input.ng-invalid')
                             .first()
                             .focus()

@@ -138,13 +138,13 @@ LOGGING = {
             'formatter': 'simple'
         },
     },
-    'loggers': {
-        'osb': { # I keep all my of apps under 'apps' folder, but you can also add them one by one, and this depends on how your virtualenv/paths are set
-            'handlers': ['log_file'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-    },
+    # 'loggers': {
+    #     'osb': { # I keep all my of apps under 'apps' folder, but you can also add them one by one, and this depends on how your virtualenv/paths are set
+    #         'handlers': ['log_file'],
+    #         'level': 'DEBUG',
+    #         'propagate': True,
+    #     },
+    # },
     # you can also shortcut 'loggers' and just configure logging for EVERYTHING at once
     'root': {
         'handlers': ['log_file'],

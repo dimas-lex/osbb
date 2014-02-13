@@ -22,5 +22,9 @@ urlpatterns = patterns('',
 
 
 urlpatterns += format_suffix_patterns(
-    ( url(r'^rest/accounts/$',  AccountsList.as_view()), )
+    ( url(r'^rest/accounts/$',  AccountsListView.as_view()), )
+)
+
+urlpatterns += format_suffix_patterns(
+    ( url(r'^rest/services/$',  ServicesView.as_view()), )
 )

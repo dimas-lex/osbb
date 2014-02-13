@@ -158,10 +158,11 @@
 
             OsbApp.controller('OsbBaseCtrl', ['$scope',
                 function($scope) {
-                    $("input[name*='date']").datetimepicker({
+                    $("input[name*='date']").datepicker({
+                        'data-format': "dd.mm.yyyy",
                         pickTime: false,
                         language: "ru-RU",
-                        format: "dd/mm/yyyy",
+                        format: "dd.mm.yyyy",
                         autoclose: true,
                         clearBtn: true,
                         orientation: "top right",
